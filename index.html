@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>環遊世界找馬桶：極限憋尿大作戰 | Around the World: Toilet Rush</title>
+  <meta name="description" content="像素風格復古街機動作遊戲：環遊世界各大名勝，擊退瘋狂搶馬桶的路人，在憋尿極限前衝向黃金馬桶！">
+  <!-- Google Fonts for Retro Pixel Aesthetic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Arcade Cabinet / Game Container -->
+  <div id="arcade-container" class="arcade-shell">
+    <!-- Header / Brand Banner -->
+    <header id="arcade-header">
+      <div class="header-logo">
+        <span class="pixel-toilet-icon">🚽</span>
+        <h1 class="game-title">極限憋尿大作戰 <span class="subtitle">TOILET RUSH: WORLD TOUR</span></h1>
+      </div>
+      <div class="header-controls">
+        <button id="btn-toggle-sound" class="retro-btn btn-sm" title="開關音效">🔊 音效: 開</button>
+        <button id="btn-toggle-bgm" class="retro-btn btn-sm" title="開關背景音樂">🎵 BGM: 開</button>
+        <button id="btn-toggle-crt" class="retro-btn btn-sm" title="切換CRT復古濾鏡">📺 CRT濾鏡: 開</button>
+        <button id="btn-help" class="retro-btn btn-sm" title="操作說明">❓ 操作</button>
+      </div>
+    </header>
+
+    <!-- Main Game Canvas Area -->
+    <div id="screen-wrapper" class="crt-filter">
+      <canvas id="game-canvas" width="800" height="450"></canvas>
+      
+      <!-- Scanline Overlay -->
+      <div class="scanlines"></div>
+      <div class="crt-glow"></div>
+      <div id="vignette-alert" class="vignette-alert"></div>
+
+      <!-- In-Game Heads-Up Display (HUD Overlay) -->
+      <div id="game-hud" class="hud-container hidden">
+        <!-- Top Left: Urgency / Bladder Meter -->
+        <div class="hud-box bladder-box">
+          <div class="hud-label">
+            <span class="pulse-icon">⚠️</span> 便意急迫值 (URGENCY)
+            <span id="hud-bladder-pct" class="hud-val">0%</span>
+          </div>
+          <div class="meter-bar-outer">
+            <div id="hud-bladder-fill" class="meter-bar-fill bladder-fill" style="width: 10%;"></div>
+            <div class="meter-marker danger-mark" style="left: 80%;"></div>
+          </div>
+        </div>
+
+        <!-- Top Center: Stage & Toilet Distance -->
+        <div class="hud-box stage-box">
+          <div id="hud-stage-name" class="stage-title">STAGE 1: 東京澀谷</div>
+          <div class="distance-track">
+            <span class="player-marker" id="hud-player-track">🏃</span>
+            <div class="track-line"></div>
+            <span class="toilet-marker">🚽</span>
+          </div>
+          <div id="hud-distance-text" class="distance-text">距離馬桶: 120m</div>
+        </div>
+
+        <!-- Top Right: Score & TP Weapon Inventory -->
+        <div class="hud-box stats-box">
+          <div class="stat-row">
+            <span class="stat-label">SCORE:</span>
+            <span id="hud-score" class="stat-value">000000</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">🧻 衛生紙彈藥:</span>
+            <span id="hud-ammo" class="stat-value">10</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">⚡ 芳香必殺:</span>
+            <div class="super-meter-outer">
+              <div id="hud-super-fill" class="super-meter-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- UI Screens & Modals -->
+      <!-- Title Screen -->
+      <div id="title-screen" class="ui-screen active">
+        <div class="title-content">
+          <div class="title-logo-badge">WORLD TOILET QUEST</div>
+          <h2 class="title-main-text">環遊世界找馬桶</h2>
+          <p class="title-tagline">「肚子快炸了！擋路搶坑的全部給我退散！」</p>
+          
+          <div class="character-preview-card">
+            <canvas id="preview-canvas" width="96" height="96"></canvas>
+            <div class="hero-desc">
+              <span class="hero-name">憋尿勇者：阿豪</span>
+              <span class="hero-quote">「誰敢跟我搶最後一個坑位，我就用吸盤送他上西天！」</span>
+            </div>
+          </div>
+
+          <div class="menu-actions">
+            <button id="btn-start-game" class="retro-btn btn-large btn-primary pulse-btn">
+              🚽 立即衝刺開打 (START)
+            </button>
+            <div class="difficulty-picker">
+              <span>難度選擇：</span>
+              <label class="diff-opt"><input type="radio" name="difficulty" value="easy"> 悠閒找廁</label>
+              <label class="diff-opt"><input type="radio" name="difficulty" value="normal" checked> 急性憋尿 (標準)</label>
+              <label class="diff-opt"><input type="radio" name="difficulty" value="hard"> 麻辣鍋地獄 (極速爆炸)</label>
+            </div>
+            <button id="btn-stage-select-menu" class="retro-btn btn-secondary">
+              🗺️ 選擇關卡世界
+            </button>
+          </div>
+
+          <div class="instructions-snippet">
+            <span>🎮 [A/D] 或 [←/→] 移動 | [W] 或 [Space] 跳躍 | [J] 吸盤揮擊 | [K] 丟衛生紙 | [L] 芳香除臭大招 | [Shift] 夾腿衝刺</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage Select Screen -->
+      <div id="stage-select-screen" class="ui-screen hidden">
+        <div class="screen-dialog">
+          <h3>🌍 選擇旅行目的地與馬桶關卡</h3>
+          <p class="dialog-sub">環遊全球各大名勝，尋找傳說中的世界神聖之座！</p>
+          <div class="stage-grid">
+            <div class="stage-card active" data-stage="0">
+              <div class="stage-card-icon">🇯🇵</div>
+              <div class="stage-card-info">
+                <h4>第 1 站：東京澀谷街頭</h4>
+                <p>夜市拉麵與霓虹看板，醉酒上班族瘋狂搶坑！</p>
+                <span class="badge">已解鎖</span>
+              </div>
+            </div>
+            <div class="stage-card" data-stage="1">
+              <div class="stage-card-icon">🇫🇷</div>
+              <div class="stage-card-info">
+                <h4>第 2 站：巴黎塞納河畔</h4>
+                <p>浪漫露天咖啡館，傲慢服務生與優雅貴婦霸佔公廁！</p>
+                <span class="badge" id="badge-stg-1">可挑戰</span>
+              </div>
+            </div>
+            <div class="stage-card" data-stage="2">
+              <div class="stage-card-icon">🇺🇸</div>
+              <div class="stage-card-info">
+                <h4>第 3 站：紐約時代廣場地鐵</h4>
+                <p>擁擠嘈雜的地下鐵，滑板龐克與公廁收費大媽決戰！</p>
+                <span class="badge" id="badge-stg-2">可挑戰</span>
+              </div>
+            </div>
+            <div class="stage-card" data-stage="3">
+              <div class="stage-card-icon">🇪🇬</div>
+              <div class="stage-card-info">
+                <h4>第 4 站：埃及開羅金字塔</h4>
+                <p>炙熱沙漠古蹟，沉睡三千年急需解手的木乃伊大軍！</p>
+                <span class="badge" id="badge-stg-3">可挑戰</span>
+              </div>
+            </div>
+            <div class="stage-card" data-stage="4">
+              <div class="stage-card-icon">🌌</div>
+              <div class="stage-card-info">
+                <h4>最終站：天界黃金馬桶</h4>
+                <p>漂浮於宇宙的神聖王座！迎戰搶廁所的「便意大魔王」！</p>
+                <span class="badge" id="badge-stg-4">至尊挑戰</span>
+              </div>
+            </div>
+          </div>
+          <div class="dialog-footer">
+            <button id="btn-stage-back" class="retro-btn">返回主選單</button>
+            <button id="btn-stage-confirm" class="retro-btn btn-primary">進入所選關卡 🚀</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level Victory / Flush Fanfare Screen -->
+      <div id="victory-screen" class="ui-screen hidden">
+        <div class="screen-dialog victory-dialog">
+          <div class="victory-flush-animation">
+            <span class="big-toilet-emoji">🚽✨</span>
+            <div class="water-flush-vortex"></div>
+          </div>
+          <h2 class="victory-title">🎉 舒暢！順利排解！</h2>
+          <p id="victory-quote" class="victory-quote">「啊……這才是人間極樂！拯救了一條內褲！」</p>
+          <div class="victory-stats">
+            <div class="stat-box">
+              <span>擊倒搶坑路人</span>
+              <strong id="vic-enemies-count">0</strong>
+            </div>
+            <div class="stat-box">
+              <span>剩餘忍耐度</span>
+              <strong id="vic-urgency-left">0%</strong>
+            </div>
+            <div class="stat-box">
+              <span>獲得總積分</span>
+              <strong id="vic-total-score">0</strong>
+            </div>
+          </div>
+          <div class="dialog-footer">
+            <button id="btn-next-stage" class="retro-btn btn-primary btn-large">前往下一國尋找馬桶 ✈️</button>
+            <button id="btn-replay-stage" class="retro-btn">重新挑戰本關</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Over / Accident Screen -->
+      <div id="gameover-screen" class="ui-screen hidden">
+        <div class="screen-dialog gameover-dialog">
+          <div class="accident-icon">💥💩💦</div>
+          <h2 class="gameover-title">慘劇發生！來不及了！</h2>
+          <p id="gameover-reason" class="gameover-reason">你沒能在極限時間內到達馬桶，人生最尷尬的一刻降臨了……</p>
+          <div class="dialog-footer">
+            <button id="btn-retry-game" class="retro-btn btn-primary btn-large">換條新褲子，再來一次！ (RETRY)</button>
+            <button id="btn-title-return" class="retro-btn">返回主畫面</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Help / Instructions Modal -->
+      <div id="help-modal" class="ui-screen hidden">
+        <div class="screen-dialog help-dialog">
+          <h3>📖 遊戲玩法與戰鬥指南</h3>
+          <div class="help-grid">
+            <div class="help-col">
+              <h4>🎯 遊戲目標</h4>
+              <p>你在環遊世界時吃壞了肚子！<strong>便意值 (Urgency)</strong> 會隨時間不斷攀升。你必須穿越重重阻礙，打飛所有霸佔公廁與搶坑的路人，在急迫值達到 <strong>100%</strong> 爆炸之前衝進關底馬桶！</p>
+              <h4>🎁 道具補給</h4>
+              <ul>
+                <li>🧻 <strong>衛生紙捲</strong>：增加投擲彈藥 & 少量降低便意。</li>
+                <li>🧊 <strong>冰鎮純水</strong>：大幅冷卻肚子，降低 20% 便意值！</li>
+                <li>🧼 <strong>滑溜香皂</strong>：獲得短暫無敵加速狀態。</li>
+                <li>💨 <strong>強效芳香劑</strong>：補充全螢幕必殺怒氣！</li>
+              </ul>
+            </div>
+            <div class="help-col">
+              <h4>🕹️ 操作按鍵</h4>
+              <table class="keys-table">
+                <tr><td><strong>A / D</strong> 或 <strong>← / →</strong></td><td>左右移動</td></tr>
+                <tr><td><strong>W / 空白鍵</strong> 或 <strong>↑</strong></td><td>跳躍 (可踩踏或避開障礙)</td></tr>
+                <tr><td><strong>J</strong> 或 <strong>Z</strong></td><td><strong>吸盤三段猛擊</strong> (近戰主武器)</td></tr>
+                <tr><td><strong>K</strong> 或 <strong>X</strong></td><td><strong>投擲捲筒衛生紙</strong> (遠程擊退)</td></tr>
+                <tr><td><strong>L</strong> 或 <strong>C</strong></td><td><strong>芳香風暴必殺技</strong> (怒氣滿時全場清空)</td></tr>
+                <tr><td><strong>Shift</strong> 或 <strong>雙擊方向</strong></td><td><strong>夾腿急迫衝刺</strong> (閃避敵人)</td></tr>
+              </table>
+              <p class="tip-text">💡 提示：手機與觸控平板可直接使用畫面下方的虛擬按鈕！</p>
+            </div>
+          </div>
+          <div class="dialog-footer">
+            <button id="btn-close-help" class="retro-btn btn-primary">了解，準備搶馬桶！</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile / Touch Controls Overlay (Virtual Gamepad) -->
+    <div id="touch-controls" class="touch-controls-container">
+      <!-- Left: D-Pad -->
+      <div class="dpad-cluster">
+        <button id="touch-left" class="touch-btn dpad-btn" data-key="ArrowLeft">◀</button>
+        <button id="touch-right" class="touch-btn dpad-btn" data-key="ArrowRight">▶</button>
+        <button id="touch-up" class="touch-btn dpad-btn" data-key="ArrowUp">▲ 跳</button>
+        <button id="touch-dash" class="touch-btn dpad-btn special-btn" data-key="Shift">⚡ 衝刺</button>
+      </div>
+
+      <!-- Right: Action Buttons -->
+      <div class="action-cluster">
+        <button id="touch-attack" class="touch-btn act-btn btn-attack" data-key="KeyJ">
+          <span>🪠</span>
+          <small>吸盤</small>
+        </button>
+        <button id="touch-throw" class="touch-btn act-btn btn-throw" data-key="KeyK">
+          <span>🧻</span>
+          <small>投紙</small>
+        </button>
+        <button id="touch-super" class="touch-btn act-btn btn-super" data-key="KeyL">
+          <span>💨</span>
+          <small>必殺</small>
+        </button>
+      </div>
+    </div>
+
+    <!-- Arcade Footer / Credits -->
+    <footer id="arcade-footer">
+      <span>環遊世界尋找馬桶：極限憋尿大作戰 © 2026 PIXEL TOILET STUDIOS</span>
+      <span class="flair-tag">100% PURE CHIPTUNE & RETRO PIXEL POWER</span>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/audio.js"></script>
+  <script src="js/pixel_art.js"></script>
+  <script src="js/entities.js"></script>
+  <script src="js/stages.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
